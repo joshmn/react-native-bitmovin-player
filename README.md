@@ -7,7 +7,7 @@
 
 ## Getting started
 
-`$ npm install react-native-bitmovin-player --save`
+`$ yarn add https://github.com/fhugoduarte/react-native-bitmovin-player.git`
 
 ### Mostly automatic installation
 
@@ -24,8 +24,8 @@
 
 #### Android
 
-1. Open up `android/app/src/main/java/[...]/MainActivity.java`
-  - Add `import com.xxsnakerxx.RNBitmovinPlayerPackage;` to the imports at the top of the file
+1. Open up `android/app/src/main/java/[...]/MainApplication.java`
+  - Add `import com.xxsnakerxx.RNBitmovinPlayer.RNBitmovinPlayerPackage;` to the imports at the top of the file
   - Add `new RNBitmovinPlayerPackage()` to the list returned by the `getPackages()` method
 2. Append the following lines to `android/settings.gradle`:
    ```java
@@ -41,7 +41,7 @@
 
 Add line to your Podfile
 
-`pod 'BitmovinPlayer', git: 'https://github.com/bitmovin/bitmovin-player-ios-sdk-cocoapod.git', tag: '2.18.0'`.
+`pod 'BitmovinPlayer', git: 'https://github.com/bitmovin/bitmovin-player-ios-sdk-cocoapod.git', tag: '2.36.0'`.
 
 After that, install the pod using `pod install`.
 
