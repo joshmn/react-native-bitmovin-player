@@ -33,6 +33,8 @@ import com.bitmovin.player.api.event.listener.OnFullscreenExitListener;
 import com.bitmovin.player.config.PlayerConfiguration;
 import com.bitmovin.player.BitmovinPlayer;
 import com.bitmovin.player.BitmovinPlayerView;
+import com.bitmovin.player.config.media.SourceConfiguration;
+import com.bitmovin.player.offline.OfflineSourceItem;
 import com.bitmovin.player.ui.FullscreenHandler;
 
 import com.facebook.react.bridge.Arguments;
@@ -44,6 +46,7 @@ import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.google.gson.Gson;
 
 import java.util.Map;
 
@@ -55,6 +58,7 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
     private BitmovinPlayer _player;
     private boolean _fullscreen;
     private ThemedReactContext _reactContext;
+    private Gson gson = new Gson();
 
     @Override
     public String getName() {
@@ -171,60 +175,73 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         ReadableMap posterMap = null;
         ReadableMap styleMap = null;
 
-        if (config.hasKey("source")) {
-            sourceMap = config.getMap("source");
+        if (config.hasKey("offlineSource") && config.getString("offlineSource").length() > 1) {
+            String offlineSource = config.getString("offlineSource");
+            OfflineSourceItem offlineSourceItem = this.gson.fromJson(offlineSource, OfflineSourceItem.class);
+
+            SourceConfiguration sourceConfiguration = new SourceConfiguration();
+            sourceConfiguration.addSourceItem(offlineSourceItem);
+
+            this._player.load(sourceConfiguration);
+        } else {
+            if (config.hasKey("source")) {
+                sourceMap = config.getMap("source");
+            }
+
+            if (sourceMap != null && sourceMap.getString("url") != null) {
+                configuration.setSourceItem(sourceMap.getString("url"));
+
+                if (sourceMap.getString("title") != null) {
+                    configuration.getSourceItem().setTitle(sourceMap.getString("title"));
+                }
+
+                if (config.hasKey("poster")) {
+                    posterMap = config.getMap("poster");
+                }
+
+                if (posterMap != null && posterMap.getString("url") != null) {
+                    boolean persistent = false;
+
+                    if (posterMap.hasKey("persistent")) {
+                        persistent = posterMap.getBoolean("persistent");
+                    }
+
+                    configuration.getSourceItem()
+                            .setPosterImage(posterMap.getString("url"), persistent);
+                }
+
+                if (config.hasKey("style")) {
+                    styleMap = config.getMap("style");
+                }
+
+                if (styleMap != null) {
+                    if (styleMap.hasKey("uiEnabled") && !styleMap.getBoolean("uiEnabled")) {
+                        configuration.getStyleConfiguration().setUiEnabled(false);
+                    }
+
+                    if (styleMap.hasKey("uiCss") && styleMap.getString("uiCss") != null) {
+                        configuration.getStyleConfiguration().setPlayerUiCss(styleMap.getString("uiCss"));
+                    }
+
+                    if (styleMap.hasKey("supplementalUiCss") && styleMap.getString("supplementalUiCss") != null) {
+                        configuration.getStyleConfiguration().setSupplementalPlayerUiCss(styleMap.getString("supplementalUiCss"));
+                    }
+
+                    if (styleMap.hasKey("uiJs") && styleMap.getString("uiJs") != null) {
+                        configuration.getStyleConfiguration().setPlayerUiJs(styleMap.getString("uiJs"));
+                    }
+
+                    if (styleMap.hasKey("fullscreenIcon") && styleMap.getBoolean("fullscreenIcon")) {
+                        _playerView.setFullscreenHandler(this);
+                    }
+                }
+
+                _player.setup(configuration);
+            }
         }
 
-        if (sourceMap != null && sourceMap.getString("url") != null) {
-            configuration.setSourceItem(sourceMap.getString("url"));
 
-            if (sourceMap.getString("title") != null) {
-                configuration.getSourceItem().setTitle(sourceMap.getString("title"));
-            }
 
-            if (config.hasKey("poster")) {
-                posterMap = config.getMap("poster");
-            }
-
-            if (posterMap != null && posterMap.getString("url") != null) {
-                boolean persistent = false;
-
-                if (posterMap.hasKey("persistent")) {
-                    persistent = posterMap.getBoolean("persistent");
-                }
-
-                configuration.getSourceItem()
-                        .setPosterImage(posterMap.getString("url"), persistent);
-            }
-
-            if (config.hasKey("style")) {
-                styleMap = config.getMap("style");
-            }
-
-            if (styleMap != null) {
-                if (styleMap.hasKey("uiEnabled") && !styleMap.getBoolean("uiEnabled")) {
-                    configuration.getStyleConfiguration().setUiEnabled(false);
-                }
-
-                if (styleMap.hasKey("uiCss") && styleMap.getString("uiCss") != null) {
-                    configuration.getStyleConfiguration().setPlayerUiCss(styleMap.getString("uiCss"));
-                }
-
-                if (styleMap.hasKey("supplementalUiCss") && styleMap.getString("supplementalUiCss") != null) {
-                    configuration.getStyleConfiguration().setSupplementalPlayerUiCss(styleMap.getString("supplementalUiCss"));
-                }
-
-                if (styleMap.hasKey("uiJs") && styleMap.getString("uiJs") != null) {
-                    configuration.getStyleConfiguration().setPlayerUiJs(styleMap.getString("uiJs"));
-                }
-
-                if (styleMap.hasKey("fullscreenIcon") && styleMap.getBoolean("fullscreenIcon")) {
-                    _playerView.setFullscreenHandler(this);
-                }
-            }
-
-            _player.setup(configuration);
-        }
     }
 
     @Override
