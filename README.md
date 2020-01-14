@@ -7,11 +7,25 @@
 
 ## Getting started
 
-`$ yarn add https://github.com/fhugoduarte/react-native-bitmovin-player.git`
+1. Disable auto link, create `react-native.config.js` archive in root folder.
 
-### Mostly automatic installation
+```js
+module.exports = {
+  dependencies: {
+    'react-native-bitmovin-player': {
+      platforms: {
+        android: null,
+        ios: null,
+      },
+    },
+  },
+};
+```
 
-`$ react-native link react-native-bitmovin-player`
+2. Install react-native-bitmovin-player fork.
+```bash
+  $ yarn add https://github.com/fhugoduarte/react-native-bitmovin-player.git
+```
 
 ### Manual installation
 
@@ -80,6 +94,23 @@ Add your Bitmovin player license key to the `AndroidManifest.xml`.
 ```
 
 Your player license key can be found when logging in into https://dashboard.bitmovin.com and navigating to `Player -> Licenses`.
+
+Add permissions to the `AndroidManifest.xml`.
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+```
+
+Enable allowBackup to the `AndroidManifest.xml`.
+
+```xml
+<application
+      ...
+      android:allowBackup="true">
+```
 
 ## Usage
 ```javascript
