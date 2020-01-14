@@ -221,4 +221,5 @@ const RNBitmovinPlayer = requireNativeComponent(
   },
 );
 
+export { default as VideoDownload } from './VideoDownload';
 export default BitmovinPlayer;
