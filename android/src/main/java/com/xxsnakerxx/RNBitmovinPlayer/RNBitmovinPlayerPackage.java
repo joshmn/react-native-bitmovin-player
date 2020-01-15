@@ -17,7 +17,7 @@ public class RNBitmovinPlayerPackage implements ReactPackage {
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
       List<NativeModule> modules = new ArrayList<>();
       modules.add(new RNBitmovinPlayerModule(reactContext));
-      modules.add(new RNBitmovinVideoDownloadModule(reactContext));
+      modules.add(new RNBitmovinVideoManagerModule(reactContext));
 
       return modules;
     }

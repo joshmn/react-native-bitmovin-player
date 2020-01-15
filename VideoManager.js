@@ -1,12 +1,12 @@
 import { NativeModules, NativeEventEmitter } from 'react-native';
 
-const { RNBitmovinVideoDownloadModule } = NativeModules;
-const EventEmitter = new NativeEventEmitter(RNBitmovinVideoDownloadModule);
+const { RNBitmovinVideoManagerModule } = NativeModules;
+const EventEmitter = new NativeEventEmitter(RNBitmovinVideoManagerModule);
 
-const VideoDownload = {};
+const VideoManager = {};
 
-VideoDownload.download = configuration => RNBitmovinVideoDownloadModule.startDownload(configuration);
-VideoDownload.onStartDownload = (callback) => {
+VideoManager.download = configuration => RNBitmovinVideoManagerModule.startDownload(configuration);
+VideoManager.onStartDownload = (callback) => {
   const nativeEvent = "onStartDownload";
   if (!nativeEvent) {
     throw new Error("Invalid event");
@@ -16,7 +16,7 @@ VideoDownload.onStartDownload = (callback) => {
   return EventEmitter.addListener(nativeEvent, callback);
 }
 
-VideoDownload.onProgress = (callback) => {
+VideoManager.onProgress = (callback) => {
   const nativeEvent = "onProgress";
   if (!nativeEvent) {
     throw new Error("Invalid event");
@@ -26,7 +26,7 @@ VideoDownload.onProgress = (callback) => {
   return EventEmitter.addListener(nativeEvent, callback);
 }
 
-VideoDownload.onCompleted = (callback) => {
+VideoManager.onCompleted = (callback) => {
   const nativeEvent = "onCompleted";
   if (!nativeEvent) {
     throw new Error("Invalid event");
@@ -36,7 +36,7 @@ VideoDownload.onCompleted = (callback) => {
   return EventEmitter.addListener(nativeEvent, callback);
 }
 
-VideoDownload.onError = (callback) => {
+VideoManager.onError = (callback) => {
   const nativeEvent = "onError";
   if (!nativeEvent) {
     throw new Error("Invalid event");
@@ -46,6 +46,16 @@ VideoDownload.onError = (callback) => {
   return EventEmitter.addListener(nativeEvent, callback);
 }
 
+VideoManager.delete = (source) => RNBitmovinVideoManagerModule.startDelete(source);
 
+VideoManager.onStartDelete = (callback) => {
+  const nativeEvent = "onStartDelete";
+  if (!nativeEvent) {
+    throw new Error("Invalid event");
+  }
 
-export default VideoDownload;
+  EventEmitter.removeAllListeners(nativeEvent);
+  return EventEmitter.addListener(nativeEvent, callback);
+}
+
+export default VideoManager;
