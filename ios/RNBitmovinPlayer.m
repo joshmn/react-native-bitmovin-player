@@ -26,12 +26,22 @@
 - (void)setConfiguration:(NSDictionary *)config {
     BMPPlayerConfiguration *configuration = [BMPPlayerConfiguration new];
     
-    if (!config[@"source"] || !config[@"source"][@"url"]) return;
+    if (!config[@"source"] || !config[@"source"][@"url"] || !config[@"offlineSource"]) return;
     
-    [configuration setSourceItemWithString:config[@"source"][@"url"] error:NULL];
-    
-    if (config[@"source"][@"title"]) {
-        configuration.sourceItem.itemTitle = config[@"source"][@"title"];
+    if (config[@"offlineSource"] == [NSNull null]){
+        [configuration setSourceItemWithString:config[@"source"][@"url"] error:NULL];
+        
+        if (config[@"source"][@"title"]) {
+            configuration.sourceItem.itemTitle = config[@"source"][@"title"];
+        }        
+    } else {
+        [BMPOfflineManager initializeOfflineManager];
+        BMPOfflineManager *offlineManager = [BMPOfflineManager sharedInstance];
+        
+        BMPSourceItem *sourceItem = [BMPSourceItem fromJsonData:config[@"offlineSource"][@"source"] error:NULL ];
+        
+        BMPOfflineSourceItem *offlineSourceItem = [offlineManager createOfflineSourceItemForSourceItem:sourceItem restrictedToAssetCache:true];
+        configuration.sourceItem  = offlineSourceItem;
     }
     
     if (config[@"poster"] && config[@"poster"][@"url"]) {

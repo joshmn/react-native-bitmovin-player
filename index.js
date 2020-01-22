@@ -221,5 +221,5 @@ const RNBitmovinPlayer = requireNativeComponent(
   },
 );
 
-export { default as VideoManager } from './VideoManager';
+export { default as RNBitmovinVideoManager } from './VideoManager';
 export default BitmovinPlayer;
