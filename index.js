@@ -178,6 +178,11 @@ class BitmovinPlayer extends React.Component {
       maxHeight,
     } = this.state;
 
+    const offlineSource = Platform.select({
+      ios: configuration.offlineSource,
+      android: configuration.offlineSource || ""
+    });
+
     return (
       <RNBitmovinPlayer
         {...this.props}
@@ -186,6 +191,7 @@ class BitmovinPlayer extends React.Component {
         configuration={{
           ...DEFAULT_CONFIGURATION,
           ...configuration,
+          offlineSource
         }}
         style={[
           maxHeight

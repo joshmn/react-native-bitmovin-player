@@ -29,7 +29,7 @@ RCT_EXPORT_MODULE();
 RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
     
     if (!configuration[@"url"]) {
-        [self sendEventWithName:@"onDownloadError" body:@{@"message": @"URL is not provided"}];
+        [self sendEventWithName:@"onDownloadError" body:@"URL is not provided"];
         return ;
     }
     
@@ -59,16 +59,16 @@ RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didFailWithError:(nullable NSError *)error {
-    [self sendEventWithName:@"onDownloadError" body:@{@"message": [error description]}];
+    [self sendEventWithName:@"onDownloadError" body:@[error description]];
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didProgressTo:(double)progress {
-    [self sendEventWithName:@"onDownloadProgress" body:@{@"progress": [NSNumber numberWithDouble:progress]}];
+    [self sendEventWithName:@"onDownloadProgress" body:@[NSNumber numberWithDouble:progress]];
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didResumeDownloadWithProgress:(double)progress {
-    [self sendEventWithName:@"onDownloadSuspended" body:@{@"paused": @false}];
-    [self sendEventWithName:@"onDownloadProgress" body:@{@"progress": [NSNumber numberWithDouble:progress]}];
+    [self sendEventWithName:@"onDownloadSuspended" body:@false];
+    [self sendEventWithName:@"onDownloadProgress" body:@[NSNumber numberWithDouble:progress]];
 }
 
 - (void)offlineManagerDidCancelDownload:(nonnull BMPOfflineManager *)offlineManager {
@@ -83,12 +83,12 @@ RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
 }
 
 - (void)offlineManagerDidSuspendDownload:(nonnull BMPOfflineManager *)offlineManager {
-    [self sendEventWithName:@"onDownloadSuspended" body:@{@"paused": @true}];
+    [self sendEventWithName:@"onDownloadSuspended" body:@true];
 }
 
 RCT_EXPORT_METHOD(delete: (nonnull NSDictionary *)itemToDelete) {
     if (!itemToDelete[@"source"]) {
-        [self sendEventWithName:@"onDeleteError" body:@{@"message": @"Source is not provided"}];
+        [self sendEventWithName:@"onDeleteError" body:@"Source is not provided"];
         return ;
     }
     

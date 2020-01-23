@@ -53,27 +53,19 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
     }
 
     @ReactMethod
-    public void startDownload(ReadableMap configuration) {
+    public void download(ReadableMap configuration) {
         this.currentAction = "DOWNLOAD";
         this.eventEmitter = this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         this.rootFolder = this.getReactApplicationContext().getDir("offline", ContextWrapper.MODE_PRIVATE);
 
         String url = configuration.getString("url");
         if (url == null) {
-            eventEmitter.emit("onError", "URL not provided");
+            this.eventEmitter.emit("onDownloadError", "URL is not provided");
         } else {
             SourceItem sourceItem = new SourceItem(url);
 
-            if (configuration.hasKey("thumbnail") && configuration.getString("thumbnail") != null) {
-                sourceItem.setThumbnailTrack(configuration.getString("thumbnail"));
-            }
-
             if (configuration.hasKey("title") && configuration.getString("title") != null) {
                 sourceItem.setTitle(configuration.getString("title"));
-            }
-
-            if (configuration.hasKey("poster") && configuration.getString("poster") != null) {
-                sourceItem.setPosterImage(configuration.getString("poster"), false);
             }
 
             this.offlineContentManager = OfflineContentManager.getOfflineContentManager(sourceItem, this.rootFolder.getPath(), url, this, this.getReactApplicationContext());
@@ -82,15 +74,33 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
     }
 
     @ReactMethod
-    public void startDelete(String source) {
+    public void pauseDownload() {
+        if(this.offlineContentManager == null) {
+            return;
+        }
+
+        this.offlineContentManager.suspend();
+    }
+
+    @ReactMethod
+    public void resumeDownload() {
+        if(this.offlineContentManager == null) {
+            return;
+        }
+
+        this.offlineContentManager.resume();
+    }
+
+
+    @ReactMethod
+    public void delete(String source) {
         this.currentAction = "DELETE";
         this.eventEmitter = this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         this.rootFolder = this.getReactApplicationContext().getDir("offline", ContextWrapper.MODE_PRIVATE);
 
-        this.eventEmitter.emit("onStartDelete", "");
 
         if (source == null || source.equals("")) {
-            this.eventEmitter.emit("onError", "Source not provided");
+            return;
         } else {
             SourceItem offlineSourceItem = this.gson.fromJson(source, SourceItem.class);
 
@@ -102,6 +112,11 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
         }
     }
 
+    @ReactMethod
+    public void cancelDownload() {
+        return;
+    }
+
     @Override
     public void onCompleted(SourceItem sourceItem, OfflineContentOptions offlineContentOptions) {
         this.offlineOptions = offlineContentOptions;
@@ -111,31 +126,41 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
             Object data = this.gson.toJson(offlineSourceItem);
 
             if (offlineSourceItem == null || data.equals("null")) {
-                this.eventEmitter.emit("onCompleted", "");
+                this.eventEmitter.emit("onDownloadError", "Download completed but data is null");
             } else {
-                eventEmitter.emit("onCompleted", data);
+                eventEmitter.emit("onDownloadCompleted", data);
             }
         } catch (IOException e) {
             e.printStackTrace();
-            eventEmitter.emit("onError", e.getMessage());
+            eventEmitter.emit("onDownloadError", e.getMessage());
         }
     }
 
     @Override
     public void onError(SourceItem sourceItem, ErrorEvent errorEvent) {
-        eventEmitter.emit("onError", errorEvent.getMessage());
+        eventEmitter.emit("onDownloadError", errorEvent.getMessage());
     }
 
     @Override
     public void onProgress(SourceItem sourceItem, float progress) {
-        eventEmitter.emit("onProgress", progress);
+        eventEmitter.emit("onDownloadProgress", progress);
+    }
+
+    private VideoOfflineOptionEntry getVideoToDownload(OfflineContentOptions offlineContentOptions, int qualityHeight) {
+        for (VideoOfflineOptionEntry option : offlineContentOptions.getVideoOptions()) {
+            if (option.getHeight() == qualityHeight) {
+                return option;
+            }
+        }
+
+        return offlineContentOptions.getVideoOptions().get(0);
     }
 
     @Override
     public void onOptionsAvailable(SourceItem sourceItem, OfflineContentOptions offlineContentOptions) {
         this.offlineOptions = offlineContentOptions;
 
-        VideoOfflineOptionEntry videoEntry = (VideoOfflineOptionEntry) offlineContentOptions.getVideoOptions().get(0);
+        VideoOfflineOptionEntry videoEntry = this.getVideoToDownload(offlineContentOptions, 360);
         AudioOfflineOptionEntry audioEntry = (AudioOfflineOptionEntry) offlineContentOptions.getAudioOptions().get(0);
 
         OfflineOptionEntryState offlineOptionEntryState = videoEntry.getState();
@@ -148,7 +173,7 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
                         audioEntry.setAction(OfflineOptionEntryAction.DOWNLOAD);
                     } catch (IllegalOperationException e) {
                         e.printStackTrace();
-                        eventEmitter.emit("onError", e.getMessage());
+                        eventEmitter.emit("onDownloadError", e.getMessage());
                     }
 
 
@@ -156,10 +181,9 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
                         this.offlineContentManager.process(offlineContentOptions);
                     } catch (NoConnectionException e) {
                         e.printStackTrace();
-                        eventEmitter.emit("onError", e.getMessage());
+                        eventEmitter.emit("onDownloadError", e.getMessage());
                     }
 
-                    eventEmitter.emit("onStartDownload", "");
                     break;
                 case "DOWNLOADED":
                     try {
@@ -167,18 +191,15 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
                         Object data = this.gson.toJson(offlineSourceItem);
 
 
-                        eventEmitter.emit("onCompleted", data);
+                        eventEmitter.emit("onDownloadCompleted", data);
                     } catch (IOException e) {
                         e.printStackTrace();
-                        eventEmitter.emit("onError", e.getMessage());
+                        eventEmitter.emit("onDownloadError", e.getMessage());
                     }
-                    break;
-                case "SUSPENDED":
-                    this.offlineContentManager.resume();
                     break;
                 case "FAILED":
                     this.currentAction = "DELETE";
-                    this.eventEmitter.emit("onError", "Error trying to download video");
+                    this.eventEmitter.emit("onDownloadError", "Error trying to download video");
                     this.offlineContentManager.deleteAll();
                     break;
                 default:
@@ -193,10 +214,11 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
 
     @Override
     public void onSuspended(SourceItem sourceItem) {
-        this.offlineContentManager.resume();
+        eventEmitter.emit("onDownloadSuspended", true);
     }
 
     @Override
     public void onResumed(SourceItem sourceItem) {
+        eventEmitter.emit("onDownloadSuspended", false);
     }
 }
