@@ -23,7 +23,7 @@ RCT_EXPORT_MODULE();
 }
 
 - (NSArray<NSString *> *)supportedEvents {
-    return @[@"onDownloadCompleted", @"onDownloadProgress", @"onDownloadError", @"onDownloadCanceled", @"onDownloadSuspended"];
+    return @[@"onDownloadCompleted", @"onDownloadProgress", @"onDownloadError", @"onDownloadCanceled", @"onDownloadSuspended", @"onState"];
 }
 
 RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
@@ -43,14 +43,15 @@ RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
     }
 
     Boolean isPlayable = [offlineManager isSourceItemPlayableOffline:(BMPSourceItem *) sourceItem];
+    Boolean downloaded = [offlineManager offlineStateForSourceItem:sourceItem] == 0;
     
-    if (isPlayable){
+    if (isPlayable && downloaded){
         [self sendEventWithName:@"onDownloadCompleted" body:@{@"source": [sourceItem toJsonData]}];
         return ;
     }
     
 //    check if the status is downloaded
-    if ([offlineManager offlineStateForSourceItem:sourceItem] == 0) {
+    if (downloaded) {
         [offlineManager deleteOfflineDataForSourceItem:sourceItem];
     }
     
@@ -59,31 +60,75 @@ RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didFailWithError:(nullable NSError *)error {
-    [self sendEventWithName:@"onDownloadError" body:@[error description]];
+    offlineManager = offlineManager;
+    [self sendEventWithName:@"onDownloadError" body:[error description]];
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didProgressTo:(double)progress {
-    [self sendEventWithName:@"onDownloadProgress" body:@[NSNumber numberWithDouble:progress]];
+    offlineManager = offlineManager;
+    
+    if (progress > 100) {
+        [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithInt:100]];
+    } else {
+        [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithDouble:progress]];
+    }
 }
 
 - (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didResumeDownloadWithProgress:(double)progress {
+    offlineManager = offlineManager;
+    
     [self sendEventWithName:@"onDownloadSuspended" body:@false];
-    [self sendEventWithName:@"onDownloadProgress" body:@[NSNumber numberWithDouble:progress]];
+    [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithDouble:progress]];
 }
 
 - (void)offlineManagerDidCancelDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+    
     [self sendEventWithName:@"onDownloadCanceled" body:@{@"": @""}];
 }
 
 - (void)offlineManagerDidFinishDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+
     [self sendEventWithName:@"onDownloadCompleted" body:@{@"source": [sourceItem toJsonData]}];
 }
 
 - (void)offlineManagerDidRenewOfflineLicense:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
 }
 
 - (void)offlineManagerDidSuspendDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+    
     [self sendEventWithName:@"onDownloadSuspended" body:@true];
+}
+
+RCT_EXPORT_METHOD(getState: (nonnull NSString *) url ) {
+    [BMPOfflineManager initializeOfflineManager];
+    offlineManager = [BMPOfflineManager sharedInstance];
+    
+    sourceItem = [[BMPSourceItem alloc] initWithUrl:(NSURL *) [NSURL URLWithString:url]];
+    
+    switch ([offlineManager offlineStateForSourceItem:sourceItem]) {
+        case 0:
+            [self sendEventWithName:@"onState" body:@"DOWNLOADED"];
+            break;
+        case 1:
+            [self sendEventWithName:@"onState" body:@"DOWNLOADING"];
+            break;
+        case 2:
+            [self sendEventWithName:@"onState" body:@"SUSPENDED"];
+            break;
+        case 3:
+            [self sendEventWithName:@"onState" body:@"NOT_DOWNLOADED"];
+            break;
+        case 4:
+            [self sendEventWithName:@"onState" body:@"CANCELING"];
+            break;
+        default:
+            [self sendEventWithName:@"onState" body:@"STATE_UNAVAILABLE"];
+            break;
+    }
 }
 
 RCT_EXPORT_METHOD(delete: (nonnull NSDictionary *)itemToDelete) {

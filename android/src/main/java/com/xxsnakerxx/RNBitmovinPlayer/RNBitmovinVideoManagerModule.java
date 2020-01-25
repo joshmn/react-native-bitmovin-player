@@ -117,6 +117,18 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
         return;
     }
 
+    @ReactMethod
+    public void getState(String url) {
+        this.currentAction = "GET_STATE";
+        this.eventEmitter = this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
+        this.rootFolder = this.getReactApplicationContext().getDir("offline", ContextWrapper.MODE_PRIVATE);
+
+        SourceItem sourceItem = new SourceItem(url);
+
+        this.offlineContentManager = OfflineContentManager.getOfflineContentManager(sourceItem, this.rootFolder.getPath(), url, this, this.getReactApplicationContext());
+        this.offlineContentManager.getOptions();
+    }
+
     @Override
     public void onCompleted(SourceItem sourceItem, OfflineContentOptions offlineContentOptions) {
         this.offlineOptions = offlineContentOptions;
@@ -205,6 +217,9 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
                 default:
                     break;
             }
+        } else if (this.currentAction.equals("GET_STATE")){
+            this.eventEmitter.emit("onState", offlineOptionEntryState.name());
+            this.currentAction = "";
         }
     }
 

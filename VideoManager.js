@@ -10,7 +10,8 @@ const allEvents = [
   "onDownloadProgress",
   "onDownloadError",
   "onDownloadCanceled",
-  "onDownloadSuspended"
+  "onDownloadSuspended",
+  "onState"
 ];
 
 RNBitmovinVideoManager.download = configuration => RNBitmovinVideoManagerModule.download(configuration);
@@ -18,6 +19,7 @@ RNBitmovinVideoManager.delete = (source) => RNBitmovinVideoManagerModule.delete(
 RNBitmovinVideoManager.pauseDownload = () => RNBitmovinVideoManagerModule.pauseDownload();
 RNBitmovinVideoManager.resumeDownload = () => RNBitmovinVideoManagerModule.resumeDownload();
 RNBitmovinVideoManager.cancelDownload = () => RNBitmovinVideoManagerModule.cancelDownload();
+RNBitmovinVideoManager.getState = (url) => RNBitmovinVideoManagerModule.getState(url);
 
 allEvents.forEach(event => {
   RNBitmovinVideoManager[event] = (callback) => {
