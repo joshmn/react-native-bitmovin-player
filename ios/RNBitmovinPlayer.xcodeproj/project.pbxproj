@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		990781BE23D71BF200020A59 /* RNBitmovinVideoManagerModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 990781BD23D71BF200020A59 /* RNBitmovinVideoManagerModule.m */; };
+		999BE7DF23E21D6300E3E739 /* RNSwift.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999BE7DE23E21D6300E3E739 /* RNSwift.swift */; };
+		999BE7E123E21FF700E3E739 /* RNSwift.m in Sources */ = {isa = PBXBuildFile; fileRef = 999BE7E023E21FF700E3E739 /* RNSwift.m */; };
 		C16EADDA211056EA00569421 /* RNBitmovinPlayerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = C16EADD9211056EA00569421 /* RNBitmovinPlayerManager.m */; };
 		C1FFC04C211B551700566734 /* RNBitmovinPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C1FFC04B211B551700566734 /* RNBitmovinPlayer.m */; };
 /* End PBXBuildFile section */
@@ -28,6 +30,9 @@
 		134814201AA4EA6300B7C361 /* libRNBitmovinPlayer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNBitmovinPlayer.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		990781BC23D71BA900020A59 /* RNBitmovinVideoManagerModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNBitmovinVideoManagerModule.h; sourceTree = "<group>"; };
 		990781BD23D71BF200020A59 /* RNBitmovinVideoManagerModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNBitmovinVideoManagerModule.m; sourceTree = "<group>"; };
+		999BE7DD23E21D6200E3E739 /* RNBitmovinPlayer-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RNBitmovinPlayer-Bridging-Header.h"; sourceTree = "<group>"; };
+		999BE7DE23E21D6300E3E739 /* RNSwift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNSwift.swift; sourceTree = "<group>"; };
+		999BE7E023E21FF700E3E739 /* RNSwift.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RNSwift.m; sourceTree = "<group>"; };
 		C16EADD8211056EA00569421 /* RNBitmovinPlayerManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNBitmovinPlayerManager.h; sourceTree = "<group>"; };
 		C16EADD9211056EA00569421 /* RNBitmovinPlayerManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNBitmovinPlayerManager.m; sourceTree = "<group>"; };
 		C1FFC04A211B551700566734 /* RNBitmovinPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RNBitmovinPlayer.h; sourceTree = "<group>"; };
@@ -58,11 +63,14 @@
 			children = (
 				990781BC23D71BA900020A59 /* RNBitmovinVideoManagerModule.h */,
 				990781BD23D71BF200020A59 /* RNBitmovinVideoManagerModule.m */,
+				999BE7DE23E21D6300E3E739 /* RNSwift.swift */,
+				999BE7E023E21FF700E3E739 /* RNSwift.m */,
 				C1FFC04A211B551700566734 /* RNBitmovinPlayer.h */,
 				C1FFC04B211B551700566734 /* RNBitmovinPlayer.m */,
 				C16EADD8211056EA00569421 /* RNBitmovinPlayerManager.h */,
 				C16EADD9211056EA00569421 /* RNBitmovinPlayerManager.m */,
 				134814211AA4EA7D00B7C361 /* Products */,
+				999BE7DD23E21D6200E3E739 /* RNBitmovinPlayer-Bridging-Header.h */,
 			);
 			sourceTree = "<group>";
 		};
@@ -97,6 +105,7 @@
 				TargetAttributes = {
 					58B511DA1A9E6C8500147676 = {
 						CreatedOnToolsVersion = 6.1.1;
+						LastSwiftMigration = 1130;
 					};
 				};
 			};
@@ -124,6 +133,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				990781BE23D71BF200020A59 /* RNBitmovinVideoManagerModule.m in Sources */,
+				999BE7E123E21FF700E3E739 /* RNSwift.m in Sources */,
+				999BE7DF23E21D6300E3E739 /* RNSwift.swift in Sources */,
 				C1FFC04C211B551700566734 /* RNBitmovinPlayer.m in Sources */,
 				C16EADDA211056EA00569421 /* RNBitmovinPlayerManager.m in Sources */,
 			);
@@ -218,6 +229,7 @@
 		58B511F01A9E6C8500147676 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../../../ios/Frameworks/**",
@@ -230,16 +242,21 @@
 					"$(PROJECT_DIR)/../../../ios/Pods/BitmovinPlayer/**",
 					"${SRCROOT}/../../../ios/Pods/Headers/Public/**",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = RNBitmovinPlayer;
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "RNBitmovinPlayer-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		58B511F11A9E6C8500147676 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../../../ios/Frameworks/**",
@@ -252,10 +269,13 @@
 					"$(PROJECT_DIR)/../../../ios/Pods/BitmovinPlayer/**",
 					"${SRCROOT}/../../../ios/Pods/Headers/Public/**",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = RNBitmovinPlayer;
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "RNBitmovinPlayer-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -300,6 +320,7 @@
 		C1A98FA12110BD8500735F65 /* Staging */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../../../ios/Frameworks/**",
@@ -312,10 +333,13 @@
 					"$(PROJECT_DIR)/../../../ios/Pods/BitmovinPlayer/**",
 					"${SRCROOT}/../../../ios/Pods/Headers/Public/**",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = RNBitmovinPlayer;
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "RNBitmovinPlayer-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Staging;
 		};
