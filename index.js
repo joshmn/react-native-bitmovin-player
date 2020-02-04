@@ -179,7 +179,7 @@ class BitmovinPlayer extends React.Component {
     } = this.state;
 
     const offlineSource = Platform.select({
-      ios: configuration.offlineSource,
+      ios: configuration.offlineSource || null,
       android: configuration.offlineSource || ""
     });
 
