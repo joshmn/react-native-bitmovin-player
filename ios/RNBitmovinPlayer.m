@@ -9,6 +9,8 @@
 @synthesize player = _player;
 @synthesize playerView = _playerView;
 
+double _progress = 0;
+
 - (void)dealloc {
     [_player destroy];
     
@@ -102,6 +104,7 @@
 
 #pragma mark BMPPlayerListener
 - (void)onReady:(BMPReadyEvent *)event {
+    _progress = 0;
     _onReady(@{});
 }
 
@@ -118,6 +121,7 @@
 }
 
 - (void)onTimeChanged:(BMPTimeChangedEvent *)event {
+    _progress = event.currentTime;
     _onTimeChanged(@{
                 @"time": @(event.currentTime),
                 });
@@ -157,6 +161,7 @@
 }
 
 - (void)onSeek:(BMPSeekEvent *)event {
+    _progress = event.seekTarget;
     _onSeek(@{
               @"seekTarget": @(event.seekTarget),
               @"position": @(event.position),
@@ -169,11 +174,15 @@
 
 #pragma mark BMPUserInterfaceListener
 - (void)onFullscreenEnter:(BMPFullscreenEnterEvent *)event {
-    _onFullscreenEnter(@{});
+    _onFullscreenEnter(@{
+        @"currentTime": @(_progress)
+    });
 }
 
 - (void)onFullscreenExit:(BMPFullscreenExitEvent *)event {
-    _onFullscreenExit(@{});
+    _onFullscreenExit(@{
+        @"currentTime": @(_progress)
+    });
 }
 - (void)onControlsShow:(BMPControlsShowEvent *)event {
     _onControlsShow(@{});
