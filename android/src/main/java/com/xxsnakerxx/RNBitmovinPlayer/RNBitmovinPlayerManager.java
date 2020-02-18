@@ -54,9 +54,12 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
 
     public static final String REACT_CLASS = "RNBitmovinPlayer";
 
+    private boolean _fullscreen;
+    private double _progress;
+
     private BitmovinPlayerView _playerView;
     private BitmovinPlayer _player;
-    private boolean _fullscreen;
+
     private ThemedReactContext _reactContext;
     private Gson gson = new Gson();
 
@@ -138,10 +141,10 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
                                 "phasedRegistrationNames",
                                 MapBuilder.of("bubbled", "onFullscreenEnter")))
                 .put(
-                        "_onFullscreenExit",
+                        "onFullscreenExit",
                         MapBuilder.of(
                                 "phasedRegistrationNames",
-                                MapBuilder.of("bubbled", "_onFullscreenExit")))
+                                MapBuilder.of("bubbled", "onFullscreenExit")))
                 .build();
     }
 
@@ -151,6 +154,7 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _playerView = new BitmovinPlayerView(context);
         _player = _playerView.getPlayer();
         _fullscreen = false;
+        _progress = 0;
 
         setListeners();
 
@@ -159,12 +163,9 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
 
     @Override
     public void onDropViewInstance(BitmovinPlayerView view) {
-        _playerView.onDestroy();
+        view.onDestroy();
 
         super.onDropViewInstance(view);
-
-        _player = null;
-        _playerView = null;
     }
 
     @ReactProp(name = "configuration")
@@ -261,11 +262,27 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
     @Override
     public void onFullscreenRequested() {
         _fullscreen = true;
+
+        WritableMap map = Arguments.createMap();
+        map.putDouble("currentTime", _progress);
+
+        _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+          _playerView.getId(),
+          "onFullscreenEnter",
+          map);
     }
 
     @Override
     public void onFullscreenExitRequested() {
         _fullscreen = false;
+
+        WritableMap map = Arguments.createMap();
+        map.putDouble("currentTime", _progress);
+
+        _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+          _playerView.getId(),
+          "onFullscreenExit",
+          map);
     }
 
     @Override
@@ -286,6 +303,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
     private void setListeners() {
         _player.addEventListener(new OnReadyListener() {
             public void onReady(ReadyEvent event) {
+                _progress = 0;
+
                 WritableMap map = Arguments.createMap();
 
                 _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
@@ -325,6 +344,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _player.addEventListener(new OnTimeChangedListener() {
             @Override
             public void onTimeChanged(TimeChangedEvent event) {
+                 _progress = event.getTime();
+
                 WritableMap map = Arguments.createMap();
 
                 map.putDouble("time", event.getTime());
@@ -429,6 +450,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _player.addEventListener(new OnSeekListener() {
             @Override
             public void onSeek(SeekEvent event) {
+                 _progress = event.getSeekTarget();
+
                 WritableMap map = Arguments.createMap();
 
                 map.putDouble("seekTarget", event.getSeekTarget());
