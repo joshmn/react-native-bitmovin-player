@@ -88,7 +88,7 @@ class BitmovinPlayer extends React.Component {
     maxHeight: null,
   }
 
-  _onReady = () => {
+  _onReady = (e) => {
     const {
       onReady,
     } = this.props;
@@ -113,7 +113,7 @@ class BitmovinPlayer extends React.Component {
       );
     }
 
-    onReady();
+    onReady(e);
   }
 
   play = () => {
