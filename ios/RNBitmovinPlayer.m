@@ -25,6 +25,14 @@ double _progress = 0;
     return self;
 }
 
+-(void)setInitialProgress:(double)initialProgress {
+    _progress = initialProgress;
+    [_player seek:initialProgress];
+}
+
+-(void)setIsFullscreen:(BOOL)isFullscreen {
+}
+
 - (void)setConfiguration:(NSDictionary *)config {
     BMPPlayerConfiguration *configuration = [BMPPlayerConfiguration new];
     
@@ -104,8 +112,11 @@ double _progress = 0;
 
 #pragma mark BMPPlayerListener
 - (void)onReady:(BMPReadyEvent *)event {
-    _progress = 0;
-    _onReady(@{});
+    [_player seek:_progress];
+    
+    _onReady(@{
+        @"duration": @(_player.duration)
+    });
 }
 
 - (void)onPlay:(BMPPlayEvent *)event {

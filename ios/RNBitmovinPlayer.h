@@ -7,6 +7,8 @@
 @property (nonatomic, strong) BMPBitmovinPlayerView *playerView;
 
 @property (readonly, getter=isFullscreen, nonatomic) BOOL fullscreen;
+@property (nonatomic) double initialProgress;
+@property (nonatomic) BOOL isFullscreen;
 
 @property (nonatomic, copy) NSDictionary *configuration;
 
