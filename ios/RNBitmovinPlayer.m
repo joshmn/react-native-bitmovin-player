@@ -10,6 +10,7 @@
 @synthesize playerView = _playerView;
 
 double _progress = 0;
+BOOL _isFullscreen = NO;
 
 - (void)dealloc {
     [_player destroy];
@@ -31,6 +32,7 @@ double _progress = 0;
 }
 
 -(void)setIsFullscreen:(BOOL)isFullscreen {
+    _isFullscreen = isFullscreen;
 }
 
 - (void)setConfiguration:(NSDictionary *)config {
@@ -185,16 +187,30 @@ double _progress = 0;
 
 #pragma mark BMPUserInterfaceListener
 - (void)onFullscreenEnter:(BMPFullscreenEnterEvent *)event {
-    _onFullscreenEnter(@{
-        @"currentTime": @(_progress)
-    });
+    if (_isFullscreen) {
+        _onFullscreenExit(@{
+            @"currentTime": @(_progress)
+        });
+    } else {
+        _onFullscreenEnter(@{
+            @"currentTime": @(_progress)
+        });
+    }
+    
 }
 
 - (void)onFullscreenExit:(BMPFullscreenExitEvent *)event {
-    _onFullscreenExit(@{
-        @"currentTime": @(_progress)
-    });
+    if (_isFullscreen) {
+        _onFullscreenExit(@{
+            @"currentTime": @(_progress)
+        });
+    } else {
+        _onFullscreenEnter(@{
+            @"currentTime": @(_progress)
+        });
+    }
 }
+
 - (void)onControlsShow:(BMPControlsShowEvent *)event {
     _onControlsShow(@{});
 }
