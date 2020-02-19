@@ -168,6 +168,19 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         super.onDropViewInstance(view);
     }
 
+    @ReactProp(name = "initialProgress")
+    public void setInitialProgress(BitmovinPlayerView view, double initialProgress) {
+      _progress = initialProgress;
+
+      _player.seek(initialProgress);
+
+    }
+
+    @ReactProp(name = "isFullscreen")
+    public void setIsFullscreen(BitmovinPlayerView view, boolean isFullscreen) {
+      _fullscreen = isFullscreen;
+    }
+
     @ReactProp(name = "configuration")
     public void setConfiguration(BitmovinPlayerView view, ReadableMap config) {
         PlayerConfiguration configuration = new PlayerConfiguration();
@@ -303,9 +316,12 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
     private void setListeners() {
         _player.addEventListener(new OnReadyListener() {
             public void onReady(ReadyEvent event) {
-                _progress = 0;
+            _player.seek(_progress);
+
+                double duration = _player.getDuration();
 
                 WritableMap map = Arguments.createMap();
+                map.putDouble("duration", duration);
 
                 _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
                         _playerView.getId(),
