@@ -11,6 +11,7 @@
 
 double _progress = 0;
 BOOL _isFullscreen = NO;
+BOOL _finished = NO;
 
 - (void)dealloc {
     [_player destroy];
@@ -97,6 +98,16 @@ BOOL _isFullscreen = NO;
     
     [self addSubview:_playerView];
     [self bringSubviewToFront:_playerView];
+    
+    
+}
+
+- (NSDictionary *) calculateProgres:(double) currentTime {
+    double currentProgress = currentTime / _player.duration;
+    double percentage = round(currentProgress * 100);
+    
+    NSDictionary *response = [NSDictionary dictionaryWithObjectsAndKeys:@"currentTime", currentTime, @"percentage", percentage, nil];
+    return response;
 }
 
 #pragma mark BMPFullscreenHandler protocol
@@ -115,6 +126,7 @@ BOOL _isFullscreen = NO;
 #pragma mark BMPPlayerListener
 - (void)onReady:(BMPReadyEvent *)event {
     [_player seek:_progress];
+    _finished = NO;
     
     _onReady(@{
         @"duration": @(_player.duration)
@@ -122,9 +134,14 @@ BOOL _isFullscreen = NO;
 }
 
 - (void)onPlay:(BMPPlayEvent *)event {
-    _onPlay(@{
-              @"time": @(event.time),
-              });
+    if (_finished) {
+        _onReplay(@{});
+        _finished = NO;
+    } else {
+        _onPlay(@{
+        @"time": @(event.time),
+        });
+    }
 }
 
 - (void)onPaused:(BMPPausedEvent *)event {
@@ -135,8 +152,13 @@ BOOL _isFullscreen = NO;
 
 - (void)onTimeChanged:(BMPTimeChangedEvent *)event {
     _progress = event.currentTime;
+    
+    double currentProgress = event.currentTime / _player.duration;
+    double percentage = round(currentProgress * 100);
+    
     _onTimeChanged(@{
-                @"time": @(event.currentTime),
+                @"currentTime": @(event.currentTime),
+                @"percentage": @(percentage),
                 });
 }
 
@@ -149,6 +171,8 @@ BOOL _isFullscreen = NO;
 }
 
 - (void)onPlaybackFinished:(BMPPlaybackFinishedEvent *)event {
+    _finished = YES;
+    
     _onPlaybackFinished(@{});
 }
 
@@ -175,7 +199,17 @@ BOOL _isFullscreen = NO;
 
 - (void)onSeek:(BMPSeekEvent *)event {
     _progress = event.seekTarget;
+    
+    double currentProgress = event.seekTarget / _player.duration;
+    double percentage = round(currentProgress * 100);
+    
+    if (percentage < 95) {
+        _finished = NO;
+    }
+    
     _onSeek(@{
+              @"currentTime": @(event.seekTarget),
+              @"percentage": @(percentage),
               @"seekTarget": @(event.seekTarget),
               @"position": @(event.position),
               });

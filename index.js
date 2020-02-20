@@ -45,6 +45,7 @@ class BitmovinPlayer extends React.Component {
 
     onReady: PropTypes.func,
     onPlay: PropTypes.func,
+    onReplay: PropTypes.func,
     onPaused: PropTypes.func,
     onTimeChanged: PropTypes.func,
     onStallStarted: PropTypes.func,
@@ -67,6 +68,7 @@ class BitmovinPlayer extends React.Component {
 
     onReady: EMPTY_FN,
     onPlay: EMPTY_FN,
+    onReplay: EMPTY_FN,
     onPaused: EMPTY_FN,
     onTimeChanged: EMPTY_FN,
     onStallStarted: EMPTY_FN,

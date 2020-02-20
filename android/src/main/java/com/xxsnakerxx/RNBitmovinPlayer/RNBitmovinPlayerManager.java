@@ -56,6 +56,7 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
 
     private boolean _fullscreen;
     private double _progress;
+    private boolean _finished;
 
     private BitmovinPlayerView _playerView;
     private BitmovinPlayer _player;
@@ -80,6 +81,11 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
                         MapBuilder.of(
                                 "phasedRegistrationNames",
                                 MapBuilder.of("bubbled", "onPlay")))
+                .put(
+                        "onReplay",
+                        MapBuilder.of(
+                                "phasedRegistrationNames",
+                                MapBuilder.of("bubbled", "onReplay")))
                 .put(
                         "onPaused",
                         MapBuilder.of(
@@ -154,6 +160,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _playerView = new BitmovinPlayerView(context);
         _player = _playerView.getPlayer();
         _fullscreen = false;
+        _finished = false;
+
         _progress = 0;
 
         setListeners();
@@ -313,10 +321,22 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _playerView.onDestroy();
     }
 
+    private WritableMap calculateProgress(double currentTime) {
+      double currentProgress = currentTime / _player.getDuration();
+      double percentage  = Math.round(currentProgress * 100);
+
+      WritableMap map = Arguments.createMap();
+      map.putDouble("currentTime", currentTime);
+      map.putDouble("percentage", percentage);
+
+      return map;
+    }
+
     private void setListeners() {
         _player.addEventListener(new OnReadyListener() {
             public void onReady(ReadyEvent event) {
-            _player.seek(_progress);
+              _player.seek(_progress);
+              _finished = false;
 
                 double duration = _player.getDuration();
 
@@ -334,12 +354,21 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
             public void onPlay(PlayEvent event) {
                 WritableMap map = Arguments.createMap();
 
+              if (_finished) {
+                _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                  _playerView.getId(),
+                  "onReplay",
+                  map);
+
+                _finished = false;
+              } else {
                 map.putDouble("time", event.getTime());
 
                 _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-                        _playerView.getId(),
-                        "onPlay",
-                        map);
+                  _playerView.getId(),
+                  "onPlay",
+                  map);
+              }
             }
         });
 
@@ -362,9 +391,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
             public void onTimeChanged(TimeChangedEvent event) {
                  _progress = event.getTime();
 
-                WritableMap map = Arguments.createMap();
 
-                map.putDouble("time", event.getTime());
+                WritableMap map = calculateProgress(event.getTime());
 
                 _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
                         _playerView.getId(),
@@ -400,6 +428,8 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _player.addEventListener(new OnPlaybackFinishedListener() {
             @Override
             public void onPlaybackFinished(PlaybackFinishedEvent event) {
+                _finished = true;
+
                 WritableMap map = Arguments.createMap();
 
                 _reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
@@ -466,9 +496,14 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         _player.addEventListener(new OnSeekListener() {
             @Override
             public void onSeek(SeekEvent event) {
-                 _progress = event.getSeekTarget();
 
-                WritableMap map = Arguments.createMap();
+                _progress = event.getSeekTarget();
+
+                WritableMap map = calculateProgress(event.getSeekTarget());
+
+                if (map.getDouble("percentage") < 95) {
+                  _finished = false;
+                }
 
                 map.putDouble("seekTarget", event.getSeekTarget());
                 map.putDouble("position", event.getPosition());
