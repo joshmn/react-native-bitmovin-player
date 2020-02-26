@@ -1,238 +1,173 @@
-#import "RNBitmovinPlayerManager.h"
-#import <React/RCTUIManager.h>
+//
+//  RNBitmovinVideoManagerModule.m
+//  RNBitmovinPlayer
+//
+//  Created by HugoDuarte on 21/01/20.
+//  Copyright © 2020 Facebook. All rights reserved.
+//
 
-@implementation RNBitmovinPlayerManager
+#import <Foundation/Foundation.h>
+#import "RNBitmovinVideoManagerModule.h"
+#import <BitmovinPlayer/BMPOfflineManagerListener.h>
+#import <React/RCTLog.h>
 
-@synthesize bridge = _bridge;
+BMPSourceItem *sourceItem;
+BMPOfflineManager *offlineManager;
 
-RCT_EXPORT_MODULE(RNBitmovinPlayer);
+@implementation RNBitmovinVideoManagerModule
 
-- (UIView *)view
-{
-    return [RNBitmovinPlayer new];
-}
+RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue {
     return dispatch_get_main_queue();
 }
 
-RCT_EXPORT_VIEW_PROPERTY(configuration, NSDictionary);
-RCT_EXPORT_VIEW_PROPERTY(initialProgress, double);
-RCT_EXPORT_VIEW_PROPERTY(isFullscreen, BOOL);
+- (NSArray<NSString *> *)supportedEvents {
+    return @[@"onDownloadCompleted", @"onDownloadProgress", @"onDownloadError", @"onDownloadCanceled", @"onDownloadSuspended", @"onState"];
+}
 
-RCT_EXPORT_VIEW_PROPERTY(onFullscreenEnter, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onFullscreenExit, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onControlsShow, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onControlsHide, RCTBubblingEventBlock);
+RCT_EXPORT_METHOD(download: (nonnull NSDictionary *)configuration){
 
-RCT_EXPORT_VIEW_PROPERTY(onReady, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onPlay, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onReplay, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onPaused, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onTimeChanged, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onStallStarted, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onStallEnded, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onPlaybackFinished, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onRenderFirstFrame, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onPlayerError, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onMuted, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onUnmuted, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onSeek, RCTBubblingEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onSeeked, RCTBubblingEventBlock);
+    if (!configuration[@"url"]) {
+        [self sendEventWithName:@"onDownloadError" body:@"URL is not provided"];
+        return ;
+    }
 
-RCT_EXPORT_METHOD(play:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        [player play];
+    [BMPOfflineManager initializeOfflineManager];
+    offlineManager = [BMPOfflineManager sharedInstance];
+
+    sourceItem = [[BMPSourceItem alloc] initWithUrl:(NSURL *) [NSURL URLWithString:configuration[@"url"]]];
+
+    if(configuration[@"title"]){
+        sourceItem.itemTitle = configuration[@"title"];
+    }
+
+    Boolean isPlayable = [offlineManager isSourceItemPlayableOffline:(BMPSourceItem *) sourceItem];
+    Boolean downloaded = [offlineManager offlineStateForSourceItem:sourceItem] == 0;
+
+    if (isPlayable && downloaded){
+        [self sendEventWithName:@"onDownloadCompleted" body:@{@"source": [sourceItem toJsonData]}];
+        return ;
+    }
+
+//    check if the status is downloaded
+    if (downloaded) {
+        [offlineManager deleteOfflineDataForSourceItem:sourceItem];
+    }
+
+    [offlineManager addListener:self forSourceItem:sourceItem];
+    [offlineManager downloadSourceItem:sourceItem];
+}
+
+- (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didFailWithError:(nullable NSError *)error {
+    offlineManager = offlineManager;
+    [self sendEventWithName:@"onDownloadError" body:[error description]];
+}
+
+- (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didProgressTo:(double)progress {
+    offlineManager = offlineManager;
+
+    if (progress > 100) {
+        [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithInt:100]];
     } else {
-        RCTLogError(@"Cannot play: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+        [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithDouble:progress]];
     }
 }
 
-RCT_EXPORT_METHOD(pause:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        [player pause];
-    } else {
-        RCTLogError(@"Cannot pause: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+- (void)offlineManager:(nonnull BMPOfflineManager *)offlineManager didResumeDownloadWithProgress:(double)progress {
+    offlineManager = offlineManager;
+
+    [self sendEventWithName:@"onDownloadSuspended" body:@false];
+    [self sendEventWithName:@"onDownloadProgress" body:[NSNumber numberWithDouble:progress]];
+}
+
+- (void)offlineManagerDidCancelDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+
+    [self sendEventWithName:@"onDownloadCanceled" body:@{@"": @""}];
+}
+
+- (void)offlineManagerDidFinishDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+
+    [self sendEventWithName:@"onDownloadCompleted" body:@{@"source": [sourceItem toJsonData]}];
+}
+
+- (void)offlineManagerDidRenewOfflineLicense:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+}
+
+- (void)offlineManagerDidSuspendDownload:(nonnull BMPOfflineManager *)offlineManager {
+    offlineManager = offlineManager;
+
+    [self sendEventWithName:@"onDownloadSuspended" body:@true];
+}
+
+RCT_EXPORT_METHOD(getState: (nonnull NSString *) url ) {
+    [BMPOfflineManager initializeOfflineManager];
+    offlineManager = [BMPOfflineManager sharedInstance];
+
+    sourceItem = [[BMPSourceItem alloc] initWithUrl:(NSURL *) [NSURL URLWithString:url]];
+
+    switch ([offlineManager offlineStateForSourceItem:sourceItem]) {
+        case 0:
+            [self sendEventWithName:@"onState" body:@"DOWNLOADED"];
+            break;
+        case 1:
+            [self sendEventWithName:@"onState" body:@"DOWNLOADING"];
+            break;
+        case 2:
+            [self sendEventWithName:@"onState" body:@"SUSPENDED"];
+            break;
+        case 3:
+            [self sendEventWithName:@"onState" body:@"NOT_DOWNLOADED"];
+            break;
+        case 4:
+            [self sendEventWithName:@"onState" body:@"CANCELING"];
+            break;
+        default:
+            [self sendEventWithName:@"onState" body:@"STATE_UNAVAILABLE"];
+            break;
     }
 }
 
-RCT_EXPORT_METHOD(seek:(nonnull NSNumber *)reactTag time:(float)time) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        [player seek:time];
-    } else {
-        RCTLogError(@"Cannot seek: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+RCT_EXPORT_METHOD(delete: (nonnull NSDictionary *)itemToDelete) {
+    if (!itemToDelete[@"source"]) {
+        [self sendEventWithName:@"onDeleteError" body:@"Source is not provided"];
+        return ;
     }
+
+    [BMPOfflineManager initializeOfflineManager];
+    offlineManager = [BMPOfflineManager sharedInstance];
+
+    BMPSourceItem *sourceItemToDelete = [BMPSourceItem fromJsonData:itemToDelete[@"source"] error:NULL ];
+    [offlineManager deleteOfflineDataForSourceItem:sourceItemToDelete];
 }
 
-RCT_EXPORT_METHOD(mute:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        [player mute];
-    } else {
-        RCTLogError(@"Cannot mute: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+RCT_EXPORT_METHOD(pauseDownload) {
+    if(!sourceItem || !offlineManager) {
+        return ;
     }
+
+    [offlineManager suspendDownloadForSourceItem:sourceItem];
 }
 
-RCT_EXPORT_METHOD(unmute:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        [player unmute];
-    } else {
-        RCTLogError(@"Cannot unmute: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+RCT_EXPORT_METHOD(resumeDownload) {
+    if(!sourceItem || !offlineManager) {
+        return ;
     }
+
+    [offlineManager resumeDownloadForSourceItem:sourceItem];
 }
 
-RCT_EXPORT_METHOD(enterFullscreen:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayerView *playerView = [(RNBitmovinPlayer*)view playerView];
-        
-        [playerView enterFullscreen];
-    } else {
-        RCTLogError(@"Cannot enterFullscreen: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
+RCT_EXPORT_METHOD(cancelDownload) {
+    if(!sourceItem || !offlineManager) {
+        return ;
     }
+
+    [offlineManager cancelDownloadForSourceItem:sourceItem];
 }
 
-RCT_EXPORT_METHOD(exitFullscreen:(nonnull NSNumber *)reactTag) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayerView *playerView = [(RNBitmovinPlayer*)view playerView];
-        
-        [playerView exitFullscreen];
-    } else {
-        RCTLogError(@"Cannot exitFullscreen: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
 
-RCT_EXPORT_METHOD(getCurrentTime:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.currentTime));
-    } else {
-        RCTLogError(@"Cannot getCurrentTime: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(getDuration:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.duration));
-    } else {
-        RCTLogError(@"Cannot getDuration: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(getVolume:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.volume));
-    } else {
-        RCTLogError(@"Cannot getVolume: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(setVolume:(nonnull NSNumber *)reactTag
-                  volume:(int)volume) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        player.volume = volume;
-    } else {
-        RCTLogError(@"Cannot setVolume: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(isPaused:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.isPaused));
-    } else {
-        RCTLogError(@"Cannot isPaused: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(isMuted:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.isMuted));
-    } else {
-        RCTLogError(@"Cannot isMuted: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(isStalled:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-         // BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(NO));
-    } else {
-        RCTLogError(@"Cannot isStalled: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
-
-RCT_EXPORT_METHOD(isPlaying:(nonnull NSNumber *)reactTag
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    UIView *view = [self.bridge.uiManager viewForReactTag:reactTag];
-    
-    if ([view isKindOfClass:[RNBitmovinPlayer class]]) {
-        BMPBitmovinPlayer *player = [(RNBitmovinPlayer*)view player];
-        
-        resolve(@(player.isPlaying));
-    } else {
-        RCTLogError(@"Cannot isPlaying: view with tag #%@ is not a RNBitmovinPlayer", reactTag);
-    }
-}
 
 @end
