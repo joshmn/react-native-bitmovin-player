@@ -27,6 +27,7 @@ RCT_EXPORT_VIEW_PROPERTY(onControlsHide, RCTBubblingEventBlock);
 
 RCT_EXPORT_VIEW_PROPERTY(onReady, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onPlay, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onReplay, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onPaused, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onTimeChanged, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onStallStarted, RCTBubblingEventBlock);
