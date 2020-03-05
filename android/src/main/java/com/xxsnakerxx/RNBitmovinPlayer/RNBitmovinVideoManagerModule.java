@@ -137,10 +137,8 @@ public class RNBitmovinVideoManagerModule extends ReactContextBaseJavaModule imp
             OfflineSourceItem offlineSourceItem = this.offlineContentManager.getOfflineSourceItem();
             Object data = this.gson.toJson(offlineSourceItem);
 
-            if (offlineSourceItem == null || data.equals("null")) {
-                this.eventEmitter.emit("onDownloadError", "Download completed but data is null");
-            } else {
-                eventEmitter.emit("onDownloadCompleted", data);
+            if (offlineSourceItem != null && !data.equals("null")) {
+              eventEmitter.emit("onDownloadCompleted", data);
             }
         } catch (IOException e) {
             e.printStackTrace();
