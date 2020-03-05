@@ -194,75 +194,57 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
         PlayerConfiguration configuration = new PlayerConfiguration();
 
         ReadableMap sourceMap = null;
-        ReadableMap posterMap = null;
         ReadableMap styleMap = null;
+
+        if (config.hasKey("source")) {
+          sourceMap = config.getMap("source");
+        }
 
         if (config.hasKey("offlineSource") && config.getString("offlineSource").length() > 1) {
             String offlineSource = config.getString("offlineSource");
             OfflineSourceItem offlineSourceItem = this.gson.fromJson(offlineSource, OfflineSourceItem.class);
 
-            SourceConfiguration sourceConfiguration = new SourceConfiguration();
-            sourceConfiguration.addSourceItem(offlineSourceItem);
-
-            this._player.load(sourceConfiguration);
+            configuration.setSourceItem(offlineSourceItem);
         } else {
-            if (config.hasKey("source")) {
-                sourceMap = config.getMap("source");
-            }
-
-            if (sourceMap != null && sourceMap.getString("url") != null) {
-                configuration.setSourceItem(sourceMap.getString("url"));
-
-                if (sourceMap.getString("title") != null) {
-                    configuration.getSourceItem().setTitle(sourceMap.getString("title"));
-                }
-
-                if (config.hasKey("poster")) {
-                    posterMap = config.getMap("poster");
-                }
-
-                if (posterMap != null && posterMap.getString("url") != null) {
-                    boolean persistent = false;
-
-                    if (posterMap.hasKey("persistent")) {
-                        persistent = posterMap.getBoolean("persistent");
-                    }
-
-                    configuration.getSourceItem()
-                            .setPosterImage(posterMap.getString("url"), persistent);
-                }
-
-                if (config.hasKey("style")) {
-                    styleMap = config.getMap("style");
-                }
-
-                if (styleMap != null) {
-                    if (styleMap.hasKey("uiEnabled") && !styleMap.getBoolean("uiEnabled")) {
-                        configuration.getStyleConfiguration().setUiEnabled(false);
-                    }
-
-                    if (styleMap.hasKey("uiCss") && styleMap.getString("uiCss") != null) {
-                        configuration.getStyleConfiguration().setPlayerUiCss(styleMap.getString("uiCss"));
-                    }
-
-                    if (styleMap.hasKey("supplementalUiCss") && styleMap.getString("supplementalUiCss") != null) {
-                        configuration.getStyleConfiguration().setSupplementalPlayerUiCss(styleMap.getString("supplementalUiCss"));
-                    }
-
-                    if (styleMap.hasKey("uiJs") && styleMap.getString("uiJs") != null) {
-                        configuration.getStyleConfiguration().setPlayerUiJs(styleMap.getString("uiJs"));
-                    }
-
-                    if (styleMap.hasKey("fullscreenIcon") && styleMap.getBoolean("fullscreenIcon")) {
-                        _playerView.setFullscreenHandler(this);
-                    }
-                }
-
-                _player.setup(configuration);
-            }
+          if (sourceMap != null && sourceMap.getString("url") != null) {
+            configuration.setSourceItem(sourceMap.getString("url"));
+          }
         }
 
+        if (sourceMap != null) {
+          if (sourceMap.getString("title") != null) {
+            configuration.getSourceItem().setTitle(sourceMap.getString("title"));
+          }
 
+
+          if (config.hasKey("style")) {
+            styleMap = config.getMap("style");
+          }
+
+          if (styleMap != null) {
+            if (styleMap.hasKey("uiEnabled") && !styleMap.getBoolean("uiEnabled")) {
+              configuration.getStyleConfiguration().setUiEnabled(false);
+            }
+
+            if (styleMap.hasKey("uiCss") && styleMap.getString("uiCss") != null) {
+              configuration.getStyleConfiguration().setPlayerUiCss(styleMap.getString("uiCss"));
+            }
+
+            if (styleMap.hasKey("supplementalUiCss") && styleMap.getString("supplementalUiCss") != null) {
+              configuration.getStyleConfiguration().setSupplementalPlayerUiCss(styleMap.getString("supplementalUiCss"));
+            }
+
+            if (styleMap.hasKey("uiJs") && styleMap.getString("uiJs") != null) {
+              configuration.getStyleConfiguration().setPlayerUiJs(styleMap.getString("uiJs"));
+            }
+
+            if (styleMap.hasKey("fullscreenIcon") && styleMap.getBoolean("fullscreenIcon")) {
+              _playerView.setFullscreenHandler(this);
+            }
+          }
+        }
+
+         _player.setup(configuration);
 
     }
 
