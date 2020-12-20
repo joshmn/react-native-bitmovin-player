@@ -31,6 +31,6 @@ android {
 
 dependencies {
     implementation 'com.facebook.react:react-native:+'
-    implementation 'com.bitmovin.player:playercore:2.58.0'
+    implementation 'com.bitmovin.player:playercore:2.59.0'
 
 }
