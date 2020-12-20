@@ -33,6 +33,7 @@ import com.bitmovin.player.api.event.listener.OnFullscreenExitListener;
 import com.bitmovin.player.config.PlayerConfiguration;
 import com.bitmovin.player.BitmovinPlayer;
 import com.bitmovin.player.BitmovinPlayerView;
+import com.bitmovin.player.config.drm.DRMSystems;
 import com.bitmovin.player.config.media.SourceConfiguration;
 import com.bitmovin.player.offline.OfflineSourceItem;
 import com.bitmovin.player.ui.FullscreenHandler;
@@ -210,7 +211,14 @@ public class RNBitmovinPlayerManager extends SimpleViewManager<BitmovinPlayerVie
             configuration.setSourceItem(sourceMap.getString("url"));
           }
         }
-
+ 
+        if (config.hasKey("drm")) { 
+            drmMap = config.getMap("drm");
+            UUID drmSchemeUuid = DRMSystems.WIDEVINE_UUID;
+            if(drmMap.hasKey("licenseServer")) { 
+               sourceItem.addDRMConfiguration(drmSchemeUuid, drmMap.getString("licenseServer"));
+            }
+        }
         if (sourceMap != null) {
           if (sourceMap.getString("title") != null) {
             configuration.getSourceItem().setTitle(sourceMap.getString("title"));
